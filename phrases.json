@@ -1,0 +1,27 @@
+{
+  "saudacoes": [
+    "Olá! Eu sou seu assistente de dados. Faça uma pergunta!",
+    "Bem-vindo(a)! Sou seu assistente de dados. Qual a sua pergunta?",
+    "Olá! Seu assistente de dados está online. O que quer saber?",
+    "Oi! Estou aqui para ajudar com seus dados de movimento.",
+    "Olá! Pode me perguntar qualquer coisa sobre os ângulos.",
+    "E aí! Pronto para analisar seus dados?",
+    "Bem-vindo(a)! Pergunte o que quiser sobre as articulações.",
+    "Oi! Vamos começar a explorar os dados de movimento?",
+    "Olá! Estou pronto para responder suas dúvidas.",
+    "Fala ai. Posso te responder sobre os ângulos das articulações.",
+    "Oi! Como posso ajudar você com os dados hoje?"
+  ],
+  "encerramentos": [
+    "Qualquer coisa, é só chamar!",
+    "Até a próxima!",
+    "Obrigado por usar o assistente de dados.",
+    "Foi um prazer ajudar, até mais!",
+    "Se precisar, estou por aqui.",
+    "Obrigado e até logo!",
+    "Volte sempre que quiser.",
+    "Fique à vontade para perguntar novamente.",
+    "Encerrando por aqui, até mais!",
+    "Se cuida! Até a próxima."
+  ]
+}

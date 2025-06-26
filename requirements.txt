@@ -2,4 +2,8 @@ streamlit
 pandas
 plotly
 networkx
-scipy
+scikit-learn
+supabase
+st-login-form
+streamlit-browser-storage
+rapidfuzz

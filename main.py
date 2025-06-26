@@ -211,6 +211,7 @@ def response_generator(ai_answer):
         yield word + " "
         time.sleep(0.09)
 
+<<<<<<< HEAD
 @st.dialog("Deseja realmente sair?", width="small")
 def my_logout():
     if st.button("Sim", type="primary"):
@@ -245,6 +246,29 @@ def main_app(user_id, username):
             for msg in st.session_state.chat_messages:
                 chat.chat_message(msg["role"]).write(msg["content"])
 
+=======
+def main_app(user_id, username):
+    st.set_page_config(page_title="Visualizador de Movimento", layout="wide")
+    st.title("📊 Visualizador de Dados de Movimento")
+    data = None
+
+    with st.sidebar:
+        uploaded_file = st.file_uploader("Escolha um arquivo .csv", type="csv")
+        
+        if uploaded_file:
+            data = pd.read_csv(uploaded_file)
+
+        if data is not None:
+            st.title("🧠 DataAI")
+            if "chat_messages" not in st.session_state:
+                st.session_state.chat_messages = []
+
+            chat = st.container(height=500)
+            
+            for msg in st.session_state.chat_messages:
+                chat.chat_message(msg["role"]).write(msg["content"])
+
+>>>>>>> f5a64815ff8ed0ac087a1612c6c745462ffa5b50
             prompt = st.chat_input("Digite sua pergunta")
             if prompt:
                 st.session_state.chat_messages.append({"role": "user", "content": prompt})
@@ -260,7 +284,11 @@ def main_app(user_id, username):
                 st.session_state.chat_messages.append({"role": "assistant", "content": response_text})
 
     if data is not None: 
+<<<<<<< HEAD
         tab1, tab2, tab3 = st.tabs(["📈 Gráfico", "🕸️ Grafo", "🧠 Análise DatAI"])
+=======
+        tab1, tab2 = st.tabs(["📈 Gráfico", "🕸️ Grafo"])
+>>>>>>> f5a64815ff8ed0ac087a1612c6c745462ffa5b50
 
         with tab1:
             options = {
@@ -383,6 +411,7 @@ def main_app(user_id, username):
                 else:
                     st.markdown("- Nenhum valor no 3º intervalo.")
 
+<<<<<<< HEAD
         with tab3:          
             if data is not None and len(data) > 0:                
                 nomes = {
@@ -493,10 +522,20 @@ if not st.session_state.get("authenticated", False):
     st.set_page_config(page_title="Bem-vindo!", layout="centered")
     supabase_connection = login_form()
 else:
+=======
+st.set_page_config(page_title="Login")
+msg_placeholder_login = st.empty() 
+msg_placeholder_login.header("🔐 Login")
+
+supabase_connection = login_form()
+
+if st.session_state.get("authenticated", False):
+>>>>>>> f5a64815ff8ed0ac087a1612c6c745462ffa5b50
     user_id = st.session_state.get("user_id", "guest")
     username = st.session_state.get("username", None)
 
     if not st.session_state.get("welcome_shown", False):
+<<<<<<< HEAD
         msg_placeholder_login.empty()
         if username:
             with st.spinner(f"Preparando tudo para você, {username}", show_time=False):
@@ -514,6 +553,22 @@ else:
                 time.sleep(random.randint(1,2))
 
         time.sleep(0.5)
+=======
+        if username:
+            my_bar = st.progress(0, text=f"Bem vindo, {username}")
+            for percent_complete in range(100):
+                time.sleep(0.002)
+                my_bar.progress(percent_complete + 1, text=f"Bem vindo, {username}")
+        else:
+            my_bar = st.progress(0, text="Bem vindo!")
+            for percent_complete in range(100):
+                time.sleep(0.002)
+                my_bar.progress(percent_complete + 1, text="Bem vindo!")
+
+        time.sleep(0.5)
+        my_bar.empty()
+
+>>>>>>> f5a64815ff8ed0ac087a1612c6c745462ffa5b50
         st.session_state["welcome_shown"] = True
 
     msg_placeholder_login.empty()

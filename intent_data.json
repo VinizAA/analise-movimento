@@ -1,5 +1,6 @@
 {
   "maior_angulo": [
+<<<<<<< HEAD
     "qual foi o pico de ângulo",
     "me fala o maior ângulo",
     "qual é o máximo que atingiu",
@@ -63,6 +64,70 @@
     "variação",
     "amplitude geral",
     "amplitude do cotovelo esquerdo"
+=======
+    "qual foi o pico de ângulo do joelho esquerdo?",
+    "me fala o maior ângulo que o joelho esquerdo atingiu",
+    "qual é o máximo que o joelho esquerdo alcançou?",
+    "o joelho esquerdo, qual foi o maior ângulo dele?",
+    "ponto máximo de extensão do joelho esquerdo?",
+    "valor máximo do ângulo do joelho esquerdo",
+    "qual a amplitude máxima do joelho esquerdo?",
+    "o maior valor angular do joelho esquerdo, por favor",
+    "joelho esquerdo: maior ângulo",
+    "qual o recorde de ângulo pro joelho esquerdo?",
+    "qual foi o pico de ângulo do joelho direito?",
+    "o maior ângulo que o joelho direito atingiu",
+    "qual foi o maior ângulo que o cotovelo esquerdo registrou?",
+    "valor máximo do cotovelo esquerdo",
+    "qual foi o maior ângulo registrado no ombro direito?",
+    "o ombro direito chegou a quanto de ângulo?",
+    "qual foi o maior ângulo do ombro esquerdo?",
+    "valor mais alto do ombro esquerdo",
+    "qual foi o pico máximo?",
+    "o maior ângulo registrado, qual foi?"
+  ],
+  "menor_angulo": [
+    "qual foi o menor ângulo que o cotovelo direito fez?",
+    "me diz o valor mínimo do cotovelo direito",
+    "quero ver o menor valor que apareceu no cotovelo direito",
+    "qual foi o ângulo mínimo observado no cotovelo direito?",
+    "qual foi o menor movimento do cotovelo direito?",
+    "menor ângulo registrado no cotovelo direito, por favor",
+    "qual o menor ângulo do ombro esquerdo?",
+    "me mostra o ponto mais baixo do joelho direito",
+    "qual foi o ângulo mais fechado no joelho esquerdo?",
+    "qual foi o pico mínimo?",
+    "o menor ângulo registrado, qual foi?"
+  ],
+  "media_angulo": [
+    "qual foi a média de ângulos no ombro esquerdo?",
+    "me informa a média dos valores do ombro esquerdo",
+    "quanto foi a média do ombro esquerdo?",
+    "o ombro esquerdo tá com qual média?",
+    "qual valor médio foi observado no ombro esquerdo?",
+    "qual a média de angulação do joelho direito?",
+    "média do ângulo do joelho esquerdo",
+    "qual a média do cotovelo esquerdo?",
+    "média cotovelo direito",
+    "qual a média geral?",
+    "me diga a média dos ângulos",
+    "qual o valor médio?"
+  ],
+  "amplitude_angulo": [
+    "qual a amplitude do joelho esquerdo?",
+    "me diga a diferença entre o maior e menor ângulo do ombro direito",
+    "qual o intervalo de movimento do cotovelo esquerdo?",
+    "amplitude do joelho direito",
+    "qual a variação total do ombro esquerdo?",
+    "me passa a amplitude do cotovelo direito",
+    "qual o range do joelho esquerdo",
+    "a amplitude de movimento do cotovelo esquerdo",
+    "intervalo angular do ombro direito",
+    "qual a amplitude?",
+    "me diz o range",
+    "qual a variação?",
+    "amplitude geral"
+>>>>>>> f5a64815ff8ed0ac087a1612c6c745462ffa5b50
   ],
   "saudacao": [
     "olá",
@@ -104,4 +169,8 @@
     "grato pela atenção",
     "valeu pela parceria"
   ]
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> f5a64815ff8ed0ac087a1612c6c745462ffa5b50

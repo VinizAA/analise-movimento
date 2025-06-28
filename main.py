@@ -268,6 +268,7 @@ def create_pacientes():
                 res = supabase.table("pacientes").insert(data).execute()
                 if res.data:
                     st.success("Paciente cadastrado com sucesso!")
+                    st.experimental_rerun()
                 else:
                     st.error("Erro ao cadastrar paciente.")
 

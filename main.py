@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objs as go
 import plotly.express as px
 import networkx as nx
-import time, random
+import time, random, unicodedata, re
 
 from datetime import datetime, date
 from typing import List
@@ -213,6 +213,12 @@ def plot_graph(data: pd.DataFrame, time_sec: float = 1.0):
 
     st.plotly_chart(fig, use_container_width=True)
 
+def slugify(value):
+    value = str(value)
+    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^a-zA-Z0-9_-]', '_', value)
+    return value
+
 #páginas
 def create_pacientes():
     st.set_page_config(page_title="Cadastro de Paciente", page_icon=":material/add:", layout="wide")
@@ -245,7 +251,9 @@ def create_pacientes():
 
             with st.spinner("Enviando dados..."):
                 doc_bytes = documento.read()
-                doc_path = f"pacientes/documentos/{nome}_{sobrenome}_{int(time.time())}.{documento.name.split('.')[-1]}"
+                nome_limpo = slugify(nome)
+                sobrenome_limpo = slugify(sobrenome)
+                doc_path = f"pacientes/documentos/{nome_limpo}_{sobrenome_limpo}_{int(time.time())}.{documento.name.split('.')[-1]}"
                 supabase.storage.from_("pacientes").upload(doc_path, doc_bytes, {"content-type": documento.type})
 
                 data = {

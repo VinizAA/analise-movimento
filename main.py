@@ -231,13 +231,12 @@ def create_pacientes():
             if date_str:
                 st.warning("Data inválida! Use o formato DD/MM/AAAA.")
 
-        foto = st.file_uploader("Foto do Paciente", type=["jpg", "jpeg", "png"])
-        documento = st.file_uploader("Documento Médico", type=["pdf", "docx"])
+        documento = st.file_uploader("Documento dos movimentos", type=["csv", "xlsx"])
 
         submitted = st.form_submit_button("Cadastrar")
 
         if submitted:
-            if not all([nome, sobrenome, sexo, data_nascimento, foto, documento]):
+            if not all([nome, sobrenome, sexo, data_nascimento, documento]):
                 st.warning("Preencha todos os campos e envie os arquivos!")
                 return
 
@@ -245,10 +244,6 @@ def create_pacientes():
             idade = hoje.year - data_nascimento.year - ((hoje.month, hoje.day) < (data_nascimento.month, data_nascimento.day))
 
             with st.spinner("Enviando dados..."):
-                foto_bytes = foto.read()
-                foto_path = f"pacientes/fotos/{nome}_{sobrenome}_{int(time.time())}.{foto.name.split('.')[-1]}"
-                supabase.storage.from_("pacientes").upload(foto_path, foto_bytes, {"content-type": foto.type})
-
                 doc_bytes = documento.read()
                 doc_path = f"pacientes/documentos/{nome}_{sobrenome}_{int(time.time())}.{documento.name.split('.')[-1]}"
                 supabase.storage.from_("pacientes").upload(doc_path, doc_bytes, {"content-type": documento.type})
@@ -259,7 +254,6 @@ def create_pacientes():
                     "sexo": sexo,
                     "data_nascimento": data_nascimento.isoformat(),
                     "idade": idade,
-                    "foto_url": foto_path,
                     "documento_url": doc_path
                 }
 

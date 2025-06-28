@@ -428,61 +428,56 @@ def home():
     st.info("💡 Para começar, **selecione um paciente** no menu lateral ou **adicione um novo paciente** se necessário.")
     #st.image("https://via.placeholder.com/600x200?text=Sua+Imagem+de+Boas-Vindas+aqui", caption="Análise de movimento inteligente.")
 
+def main_app():
+    # Exibe logo
+    logo_big = "logo_big.png"
+    logo_small = "logo_small.png"
+    st.logo(logo_big, icon_image=logo_small)
+
+    # Mensagem de boas-vindas (somente 1x)
+    if not st.session_state.get("toast_shown", False):
+        user = st.session_state.get("username", "usuário")
+        msg = st.toast("Carregando...")
+        time.sleep(1)
+        msg.toast("Preparando...")
+        time.sleep(1)
+        msg.toast(f"Bem-vindo {user}!", icon=":material/check:")
+        st.session_state["toast_shown"] = True
+
+    # Busca pacientes
+    pacientes_data = supabase.table("pacientes").select("nome, sobrenome").execute().data or []
+
+    # Define navegação
+    pages = {
+        "Minha Conta": [
+            st.Page(home, title="Home", icon=":material/home:")
+        ],
+        "Pacientes": [
+            *[
+                st.Page(
+                    patient(f"{p['nome']} {p['sobrenome']}"),
+                    title=f"{p['nome']} {p['sobrenome']}",
+                    icon=":material/person:"
+                )
+                for p in pacientes_data
+            ],
+            st.Page(create_pacientes, title="Adicionar Pacientes", icon=":material/manage_accounts:")
+        ]
+    }
+
+    nav = st.navigation(pages, position="sidebar", expanded=True)
+    nav.run()
+
 def login():
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
         st.session_state["username"] = ""
 
-    ph_login = st.container()
-
-    if not st.session_state.get("authenticated", False):
-        # não está logado
-        ph_login.markdown("# :material/waving_hand: Bem-vindo!")
-        supabase_connection = login_form()
+    if not st.session_state["authenticated"]:
+        st.markdown("# :material/waving_hand: Bem-vindo!")
+        login_form()
         return
     else:
-        # está logado
-        if not st.session_state.get("toast_shown", False):
-            if st.session_state.get("username"):
-                msg = st.toast("Carregando...")
-                time.sleep(1)
-                msg.toast('Preparando...')
-                time.sleep(1)
-                msg.toast(f"Bem-vindo {st.session_state['username']}!", icon=":material/check:")
-            else:
-                msg = st.toast("Carregando...")
-                time.sleep(1)
-                msg.toast('Preparando...')
-                time.sleep(1)
-                msg.toast(f"Bem-vindo!", icon=":material/check:")
-            st.session_state["toast_shown"] = True
-        
-        ph_login.empty()
-        res = supabase.table("pacientes").select("nome, sobrenome").execute()
-        pacientes_data = res.data or []
-        logo_big = "logo_big.png"
-        logo_small = "logo_small.png"
-        st.logo(logo_big, icon_image=logo_small)
-
-        pages = {
-            "Minha Conta": [
-                st.Page(home, title="Home", icon=":material/home:"),
-            ],
-            "Pacientes": [
-                *[
-                    st.Page(
-                        patient(f"{p['nome']} {p['sobrenome']}"),
-                        title=f"{p['nome']} {p['sobrenome']}",
-                        icon=":material/person:"
-                    )
-                    for p in pacientes_data
-                ],
-                st.Page(create_pacientes, title="Adicionar Pacientes", icon=":material/manage_accounts:"),
-            ]
-        }
-
-        nav = st.navigation(pages, position="sidebar", expanded=True)
-        nav.run()
-        return
+        main_app()
 
 login()

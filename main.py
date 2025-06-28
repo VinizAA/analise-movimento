@@ -227,7 +227,7 @@ def create_pacientes():
     with st.form("form_paciente", clear_on_submit=True):
         nome = st.text_input("Nome")    
         sobrenome = st.text_input("Sobrenome")
-        sexo = st.selectbox("Sexo", ["Masculino", "Feminino", "Outro"])
+        sexo = st.selectbox("Sexos", ["Masculino", "Feminino", "Outro"])
         date_str = st.text_input("Data de Nascimento (DD/MM/AAAA)")
 
         try:

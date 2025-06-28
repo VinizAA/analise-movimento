@@ -435,7 +435,6 @@ def home():
         - Cadastrar novos pacientes e gerenciar seus dados.
     """)
     st.info("💡 Para começar, **selecione um paciente** no menu lateral ou **adicione um novo paciente** se necessário.")
-    #st.image("https://via.placeholder.com/600x200?text=Sua+Imagem+de+Boas-Vindas+aqui", caption="Análise de movimento inteligente.")
 
 def main_app():
     # Exibe logo
@@ -450,7 +449,7 @@ def main_app():
         time.sleep(1)
         msg.toast("Preparando...")
         time.sleep(1)
-        msg.toast(f"Bem-vindo {user}!", icon=":material/check:")
+        msg.toast(f"Bem-vindo!", icon=":material/check:")
         st.session_state["toast_shown"] = True
 
     # Busca pacientes

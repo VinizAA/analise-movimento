@@ -1,0 +1,309 @@
+---saudacao---
+oi
+olá
+bom dia
+boa tarde
+boa noite
+tudo bem?
+tudo bom?
+como vai?
+como vai você?
+tudo certo?
+tudo beleza?
+e aí?
+opa
+fala aí
+fala
+salve
+alô
+ei
+yo
+como está indo?
+tudo em ordem?
+saudações
+como você está?
+como tem passado?
+prazer
+prazer em conhecer
+seja bem-vindo
+bem-vindo
+coé
+qual é?
+beleza?
+firmeza?
+tranquilo?
+suave?
+show de bola?
+tudo na paz?
+tudo joia?
+como anda?
+como andam as coisas?
+novidades?
+que tal?
+como tem sido?
+tudo correndo bem?
+vida boa?
+partiu conversar?
+---encerramento---
+tchau
+até logo
+até mais
+até breve
+até amanhã
+até a próxima
+adeus
+valeuzão
+valeu
+falou
+nos vemos
+bom dia
+boa tarde
+boa noite
+se cuida
+foi bom te ver
+fico por aqui
+vou nessa
+bye
+take care
+até mais tarde
+até depois
+até qualquer hora
+até quando nos encontrarmos
+tchau tchau
+xau
+flw
+vlw
+tmj
+obrigado
+obrigada
+brigado
+brigada
+muito obrigado
+agradecido
+grato
+grata
+até semana que vem
+até o próximo encontro
+foi ótimo conversar
+papo bom
+conversa massa
+bom papo
+que bom te conhecer
+espero te ver em breve
+fique bem
+cuide-se bem
+tudo de bom
+sucesso
+boa sorte
+até mais então
+então é isso
+por hoje é só
+encerro por aqui
+---ajuda---
+ajuda
+o que você pode fazer
+me diga o que sabe fazer
+quais perguntas posso fazer
+como você pode me ajudar
+explica como funciona
+o que eu posso perguntar
+o que posso consultar
+como funciona esse chatbot
+me ajuda
+preciso de ajuda
+socorro
+quero ajuda
+ajuda por favor
+me explica o que você faz
+quais dados você analisa
+quais informações posso pedir
+o que posso saber sobre o paciente
+---maior_angulo---
+mais alto
+máximo
+maior angulo
+angulo mais alto
+pico
+maior valor 
+mais elevado
+topo
+ápice
+extremo
+limite
+recorde
+supremo
+superior
+altíssimo
+gigante
+imenso
+colossal
+monumental
+astronômico
+estratosférico
+nas alturas
+lá em cima
+no topo
+no ápice
+no pico
+máxima potência
+full power
+total
+completo
+100%
+ao máximo
+intenso
+forte
+poderoso
+turbinado
+bomba
+pesado
+bruto
+violento
+absurdo
+insano
+louco
+surreal
+épico
+lendário
+histórico
+fenomenal
+espetacular
+impressionante
+incrível
+fantástico
+sensacional
+devastador
+esmagador
+avassalador
+arrebatador
+---menor_angulo---
+mínimo
+menor
+baixo
+reduzido
+inferior
+menorzinho
+limitado
+pouco
+curto
+restrito
+pequeno
+diminuto
+minúsculo
+microscópico
+ínfimo
+insignificante
+singelo
+modesto
+simples
+básico
+elementar
+fundamental
+leve
+suave
+delicado
+sutil
+discreto
+reservado
+contido
+controlado
+moderado
+comedido
+econômico
+enxuto
+conciso
+compacto
+resumido
+abreviado
+condensado
+sintético
+reduzidinho
+pouquinho
+tantinho
+nadinha
+quase nada
+praticamente zero
+baixinho
+rebaixado
+diminuído
+encurtado
+cortado
+limitadinho
+restritinho
+apertado
+estreito
+fino
+magro
+---media_angulo---
+média
+normal
+comum
+regular
+equilíbrio
+intermediário
+habitual
+estável
+constante
+moderado
+balanceado
+equilibrado
+harmônico
+proporcional
+padrão
+típico
+usual
+convencional
+tradicional
+clássico
+neutro
+central
+meio termo
+meio do caminho
+ponto médio
+centro
+mediano
+medíocre
+razoável
+aceitável
+tolerável
+passável
+ok
+tudo bem
+tranquilo
+suave
+na boa
+de boa
+numa boa
+sossegado
+calmo
+sereno
+pacífico
+relaxado
+descontraído
+natural
+espontâneo
+fluido
+orgânico
+typical
+ordinary
+routine
+everyday
+mundane
+standard
+regular
+consistent
+steady
+uniform
+stable
+balanced
+even
+level
+flat
+straight
+linear
+constante
+contínuo
+ininterrupto
+permanente
+duradouro
+prolongado

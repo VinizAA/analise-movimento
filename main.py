@@ -7,7 +7,8 @@ import time, random, unicodedata, re, io
 
 from datetime import datetime, date
 from typing import List
-from mini_neuralnetwork import predict, extract, answer
+from mini_neuralnetwork import chatbot_brain
+from streamlit_browser_storage import LocalStorage
 from st_login_form import login_form, logout
 from supabase import create_client
 from dateutil.relativedelta import relativedelta
@@ -17,68 +18,10 @@ st.set_page_config(page_title="Datai App", page_icon=":material/home:", layout="
 
 # 2. Config Supabase
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_ANON_KEY = st.secrets["SUPABASE_KEY"]
+SUPABASE_ANON_KEY = st.secrets["SUPABASE_KEY"]  
 supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-#configurações conta/autenticação
-def init_auth_state():
-    if "authenticated" not in st.session_state:
-        st.session_state["authenticated"] = False
-    if "username" not in st.session_state:
-        st.session_state["username"] = ""
-    if "login_time" not in st.session_state:
-        st.session_state["login_time"] = None
-
-def restore_session_from_url():
-    url_username = get_username_from_url()
-    
-    if url_username and not st.session_state["authenticated"]:
-        try:
-            user_check = supabase.table("user_sessions").select("username").eq("username", url_username).execute()
-            
-            if user_check.data:
-                st.session_state["authenticated"] = True
-                st.session_state["username"] = url_username
-                st.session_state["login_time"] = datetime.now()
-                return True
-        except:
-            st.session_state["authenticated"] = True
-            st.session_state["username"] = url_username
-            st.session_state["login_time"] = datetime.now()
-            return True
-    return False
-
-def save_session_to_db(username):
-    try:
-        session_data = {
-            "username": username,
-            "login_time": datetime.now().isoformat(),
-            "expires_at": (datetime.now() + relativedelta(days=7)).isoformat() 
-        }
-        
-        supabase.table("user_sessions").upsert(session_data).execute()
-    except Exception as e:
-
-        print(f"Erro ao salvar sessão: {e}")
-
-def clear_session_from_db(username):
-    try:
-        supabase.table("user_sessions").delete().eq("username", username).execute()
-    except Exception as e:
-        print(f"Erro ao limpar sessão: {e}")
-
-def set_url_with_username(username):
-    username_clean = slugify(username)
-    st.query_params.update({"user": username_clean})
-
-def get_username_from_url():
-    return st.query_params.get("user", None)
-
-def clear_url_params():
-    if "user" in st.query_params:
-        del st.query_params["user"]
-
-#auxiliares
+#Auxiliares
 def break_in_3(data: pd.DataFrame, coluna: str):
     min_val = data[coluna].min()
     max_val = data[coluna].max()
@@ -277,6 +220,11 @@ def slugify(value):
     value = re.sub(r'[^a-zA-Z0-9_-]', '_', value)
     return value
 
+def stream(prompt):
+    for char in prompt:
+        yield char
+        time.sleep(0.02)
+
 def show_analysis_tab(data: pd.DataFrame):
     """Função para reutilizar a aba de análise"""
     nomes = {
@@ -401,7 +349,178 @@ def delete_patient(paciente_id, documento_url):
     except Exception as e:  
         st.error(f"Erro ao excluir paciente: {e}")
         return False
+
+def chatbot():
+    st.set_page_config(page_title="Datai Chatbot", page_icon=":material/robot_2:", layout="wide")
+    st.title("Chatbot")
+
+    pacientes_dict = st.session_state.get("pacientes_dict", {})
     
+    if not pacientes_dict:
+        st.warning("Nenhum paciente cadastrado.")
+        return
+
+    nome_selecionado = st.selectbox("Qual o documento que deseja que o chatbot analise?", list(pacientes_dict.keys()), placeholder="Selecione o paciente")
+
+    paciente_info = pacientes_dict[nome_selecionado]
+    file_patient = paciente_info["documento_url"]
+    ph_sucess = st.empty()
+
+    key_success = f"loading_shown_{slugify(nome_selecionado)}"
+    if not st.session_state.get(key_success, False):
+        ph_sucess.success(f"Documento de {nome_selecionado} selecionado: {file_patient}")
+    
+    st.divider()
+
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if prompt := st.chat_input("Faça sua pergunta"):
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        msg_chat = chatbot_brain(prompt, file_patient, "training_data.txt", nome_selecionado)
+
+        if msg_chat:
+            with st.chat_message("ai"):
+                st.write_stream(stream(msg_chat))
+            st.session_state.messages.append({"role": "ai", "content": msg_chat})
+
+    if not st.session_state.get(key_success, False):
+        time.sleep(2)
+        ph_sucess.empty()
+    
+    st.session_state[key_success] = True
+
+def edit_patient():
+    st.set_page_config(page_title="Editar Paciente", page_icon=":material/edit:", layout="wide")
+    st.markdown("# :material/edit: Editar pacientes")
+
+    pacientes_data = supabase.table("pacientes").select("*").execute().data or []
+    
+    if not pacientes_data:
+        st.warning("Nenhum paciente cadastrado para editar.")
+        return
+
+    pacientes_dict = {f"{p['nome']} {p['sobrenome']}": p for p in pacientes_data}
+    
+    nome_selecionado = st.selectbox(
+        "Selecione o paciente para editar:", 
+        list(pacientes_dict.keys()), 
+        placeholder="Escolha um paciente"
+    )
+    
+    if nome_selecionado:
+        paciente_atual = pacientes_dict[nome_selecionado]
+        
+        data_nasc_atual = None
+        if paciente_atual.get('data_nascimento'):
+            try:
+                data_nasc_atual = datetime.fromisoformat(paciente_atual['data_nascimento']).date()
+            except:
+                data_nasc_atual = None
+
+        st.divider()
+        
+        with st.form("form_editar_paciente"):
+            st.markdown("### Dados atuais do paciente:")
+            
+            nome = st.text_input("Nome", value=paciente_atual.get('nome', ''))    
+            sobrenome = st.text_input("Sobrenome", value=paciente_atual.get('sobrenome', ''))
+            
+            opcoes_sexo = ["Masculino", "Feminino", "Outro"]
+            sexo_atual = paciente_atual.get('sexo', 'Masculino')
+            sexo_index = opcoes_sexo.index(sexo_atual) if sexo_atual in opcoes_sexo else 0
+            sexo = st.selectbox("Sexo", opcoes_sexo, index=sexo_index)
+
+            min_date = date.today() - relativedelta(years=120)
+            date_nasc = st.date_input(
+                "Data de Nascimento (DD/MM/AAAA)", 
+                format="DD/MM/YYYY", 
+                max_value="today", 
+                min_value=min_date,
+                value=data_nasc_atual
+            )
+            
+            documento = st.file_uploader(
+                "Novo documento dos movimentos (deixe vazio para manter o atual)", 
+                type=["csv", "xlsx"]
+            )
+
+            if paciente_atual.get('documento_url'):
+                st.warning(f"Deixe vazio para manter o documento atual")
+
+            st.container(height=5, border=False)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                cancelar = st.form_submit_button("Cancelar", use_container_width=True)
+            with col2:
+                salvar = st.form_submit_button("Salvar Alterações", type="primary", use_container_width=True)
+
+            if cancelar:
+                st.info("Edição cancelada.")
+                return
+
+            if salvar:
+                if not all([nome, sobrenome, sexo, date_nasc]):
+                    st.warning("Preencha todos os campos obrigatórios")
+                    return
+
+                # Calcular idade
+                hoje = date.today()
+                idade = hoje.year - date_nasc.year - ((hoje.month, hoje.day) < (date_nasc.month, date_nasc.day))
+
+                with st.spinner("Atualizando dados..."):
+                    # Preparar dados para atualização
+                    data_update = {
+                        "nome": nome,
+                        "sobrenome": sobrenome,
+                        "sexo": sexo,
+                        "data_nascimento": date_nasc.isoformat(),
+                        "idade": idade
+                    }
+
+                    # Se um novo documento foi enviado
+                    if documento:
+                        doc_bytes = documento.read()
+                        nome_limpo = slugify(nome)
+                        sobrenome_limpo = slugify(sobrenome)
+                        #nome_completo = nome_limpo + sobrenome_limpo
+                        doc_path = f"pacientes/documentos/{nome_limpo}_{sobrenome_limpo}_{int(time.time())}.{documento.name.split('.')[-1]}"
+                        
+                        # Upload do novo documento
+                        upload_result = supabase.storage.from_("pacientes").upload(doc_path, doc_bytes, {"content-type": documento.type})
+                        
+                        if upload_result:
+                            # Remover documento antigo se existir
+                            if paciente_atual.get('documento_url'):
+                                try:
+                                    supabase.storage.from_("pacientes").remove([paciente_atual['documento_url']])
+                                except Exception as e:
+                                    st.warning(f"Não foi possível remover o documento antigo: {e}")
+                            
+                            data_update["documento_url"] = doc_path
+
+                time.sleep(2)
+                
+                # Atualizar no banco
+                result = supabase.table("pacientes").update(data_update).eq("id", paciente_atual['id']).execute()
+                
+                if hasattr(result, 'error') and result.error:
+                    st.error(f"Erro ao atualizar paciente: {result.error}")
+                else:
+                    st.success("Paciente atualizado com sucesso!")
+                    #home(nome_completo)
+                    time.sleep(2)
+                    st.rerun()
+
+
 #páginas
 def create_pacientes():
     st.set_page_config(page_title="Cadastro de Paciente", page_icon=":material/add:", layout="wide")
@@ -448,6 +567,7 @@ def create_pacientes():
                 st.success("Paciente cadastrado com sucesso!")
                 time.sleep(2)
                 st.rerun()
+                #st.markdown('<meta http-equiv="refresh" content="1">', unsafe_allow_html=True)
             else:
                 st.error("Erro ao cadastrar paciente.")
 
@@ -582,6 +702,42 @@ def main_app_guest():
                                     step=0.1,
                                     format="%.2f")
             plot_graph(data, chosen_time)
+
+            # with st.expander("Tempos com ângulos extremos"):
+            #     nomes = {
+            #         "shoulderLangle": "Ombro Esquerdo",
+            #         "shoulderRangle": "Ombro Direito",
+            #         "elbowLangle": "Cotovelo Esquerdo",
+            #         "elbowRangle": "Cotovelo Direito",
+            #         "kneeLangle": "Joelho Esquerdo",
+            #         "kneeRangle": "Joelho Direito"
+            #     }
+
+            #     escolha_nome = st.selectbox("Escolha a articulação para exibir:", list(nomes.values()))
+
+            #     joint = None
+            #     for key, nome in nomes.items():
+            #         if nome == escolha_nome:
+            #             joint = key
+            #             break
+
+            #     q3 = data[joint].quantile(2 / 3)
+            #     max_val = data[joint].max()
+
+            #     df_sel = data.loc[(data[joint] >= q3) & (data[joint] <= max_val), ['time', joint]].copy()
+
+            #     df_sel['time_sec'] = ((df_sel['time'] - data['time'].min()) / 40).round(2)
+            #     df_sel['angle'] = df_sel[joint].round(1)
+
+            #     df_sel = df_sel.sort_values(by='angle', ascending=False).drop_duplicates(subset='time_sec')
+            #     df_sel.sort_values(by='time_sec', inplace=True)
+
+            #     if not df_sel.empty:
+            #         st.markdown(f"{len(df_sel)} ocorrência(s) com ângulo elevado!")
+            #         for _, row in df_sel.iterrows():
+            #             st.markdown(f"- Em {row['time_sec']}s: ângulo de {row['angle']}°")
+            #     else:
+            #         st.markdown("- Nenhum valor no 3º intervalo.")
                 
 def main_app(nome_completo: str):
     logo_big = "logo_big.png"
@@ -596,6 +752,7 @@ def main_app(nome_completo: str):
             msg.toast("Preparando...")
             time.sleep(1)
             msg.toast(f"Bem-vindo {user}!", icon=":material/check:")
+
         st.session_state["toast_shown"] = True
 
     pacientes_data = supabase.table("pacientes").select("id, nome, sobrenome, documento_url").execute().data or []
@@ -607,7 +764,10 @@ def main_app(nome_completo: str):
         "Minha Conta": [
             st.Page(home_wrapper, title="Home", icon=":material/home:")
         ],
-        "Pacientes": []
+        "Pacientes": [],
+        "Chatbot": [
+            st.Page(chatbot, title="DatAI", icon=":material/robot_2:")
+        ]
     }
 
     for p in pacientes_data:
@@ -617,62 +777,47 @@ def main_app(nome_completo: str):
         nome_completo_p = f"{p['nome']} {p['sobrenome']}"
         uploaded_file = p['documento_url']
 
+        session_key = f"uploaded_file_{p['id']}"
+        st.session_state[session_key] = uploaded_file
+
+        st.session_state["pacientes_dict"] = {
+            f"{p['nome']} {p['sobrenome']}": {
+                "id": p["id"],
+                "documento_url": p["documento_url"]
+            }
+            for p in pacientes_data if p.get("documento_url")
+        }
+
         pagina_func = patient(nome_completo_p, uploaded_file, p['id'])
         pagina_func.__name__ = f"paciente_{slugify(nome_completo_p)}_{p['id']}"
-        
+
         pages["Pacientes"].append(
             st.Page(pagina_func, title=nome_completo_p, icon=":material/person:")
         )
 
-    pages["Pacientes"].append(
-        st.Page(create_pacientes, title="Adicionar Pacientes", icon=":material/manage_accounts:")
-    )
+    pages["Pacientes"].extend([
+        st.Page(create_pacientes, title="Adicionar Pacientes", icon=":material/manage_accounts:"),
+        st.Page(edit_patient, title="Editar Pacientes", icon=":material/edit:")
+    ])
 
     nav = st.navigation(pages, position="sidebar", expanded=True)
     nav.run()
 
 def login():
-    init_auth_state()
-    
-    session_restored = restore_session_from_url()
-    
-    if session_restored:
-        username = st.session_state["username"]
-        if username:
-            main_app(username)
-        else:
-            main_app_guest()
-        return
-    
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+        st.session_state["username"] = "" 
+
     if not st.session_state["authenticated"]:
         # Usuário ainda não logado
         st.markdown("# :material/waving_hand: Bem-vindo!")
-        
-        client_info = login_form()
-        
-        if client_info and client_info.get("username"):
-            st.session_state["authenticated"] = True
-            st.session_state["username"] = client_info["username"]
-            st.session_state["login_time"] = datetime.now()
-            
-            set_url_with_username(client_info["username"])
-            
-            st.success(f"Login realizado com sucesso! Bem-vindo, {client_info['username']}!")
-            time.sleep(1)
-            st.rerun()
-        else:
-            return
+        login_form()
     else:
-        # Usuário já está logado
-        username = st.session_state["username"]
-        
-        url_username = get_username_from_url()
-        if url_username != slugify(username):
-            set_url_with_username(username)
-
-        if username:
-            main_app(username)
+        if st.session_state["username"]:
+            main_app(st.session_state["username"])
+            #st.success(f"Welcome {st.session_state['username']}")
         else:
             main_app_guest()
-
+            #st.success("Welcome guest")
+    
 login()

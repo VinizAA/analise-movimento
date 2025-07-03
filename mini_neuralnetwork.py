@@ -1,120 +1,158 @@
-import re
-import json
-import random
-import unicodedata
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from rapidfuzz import process, fuzz
-from spellchecker import SpellChecker
+from collections import defaultdict
+import random, unicodedata, string
+import streamlit as st
+import pandas as pd
+import io, re
 
-spell = SpellChecker(language='pt')
+from supabase import create_client
 
-def corrigir_texto(texto):
-    palavras = texto.split()
-    palavras_corrigidas = [spell.correction(p) for p in palavras]
-    return ' '.join(palavras_corrigidas)
+# Supabase config
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def normalize_text(text):
-    text = text.lower()
-    text = unicodedata.normalize('NFD', text)
-    text = ''.join(c for c in text if unicodedata.category(c) != 'Mn')
-    return text
+def contains_word(word, text):
+    return re.search(rf"\b{re.escape(word)}\b", text) is not None
 
-with open("intent_data.json", "r", encoding="utf-8") as f:
-    intent_data = json.load(f)
+def clean_text(text):
+    substitutions = {
+        "vc": "voce",
+        "vcs": "voces",
+        "c": "voce",
+        "td": "tudo",
+        "q": "que",
+        "pq": "porque",
+        "pqc": "por que",
+        "oq": "o que",
+        "kd": "cadê",
+        "tb": "tambem",
+        "tbm": "tambem",
+        "blz": "beleza",
+        "vlw": "valeu",
+        "flw": "falou",
+        "obg": "obrigado",
+        "dps": "depois",
+        "msg": "mensagem",
+        "hj": "hoje",
+        "bjs": "beijos",
+        "fds": "fim de semana",
+        "pfv": "por favor",
+        "pls": "por favor",
+        "agr": "agora",
 
-with open("phrases.json", "r", encoding="utf-8") as f:
-    phrases_data = json.load(f)
-    saudacoes = phrases_data.get("saudacoes", [])
-    encerramentos = phrases_data.get("encerramentos", [])
-
-samples = []
-intents = []
-
-for label, frases in intent_data.items():
-    for frase in frases:
-        frase_norm = normalize_text(frase)
-        samples.append(frase_norm)
-        intents.append(label)
-
-vectorizer = TfidfVectorizer(ngram_range=(1, 2))
-X = vectorizer.fit_transform(samples)
-
-clf = LogisticRegression(max_iter=1000)
-clf.fit(X, intents)
-
-def predict(question):
-    question_format = corrigir_texto(normalize_text(question))
-
-    x = vectorizer.transform([question_format])
-    return clf.predict(x)[0]
-
-def extract(texto):
-    mapping = {
-        "kneeLangle": ["joelho esquerdo", "knee left"],
-        "kneeRangle": ["joelho direito", "knee right"],
-        "elbowLangle": ["cotovelo esquerdo", "elbow left"],
-        "elbowRangle": ["cotovelo direito", "elbow right"],
-        "shoulderLangle": ["ombro esquerdo", "shoulder left"],
-        "shoulderRangle": ["ombro direito", "shoulder right"],
+        "eh": "é",
+        "ta": "esta",
+        "tá": "esta",
+        "to": "estou",
+        "tô": "estou",
+        "tamo": "estamos",
+        "vamo": "vamos",
+        "num": "nao",
+        "n": "nao",
+        "naum": "nao",
+        "ñ": "nao",
+        "mt": "muito",
+        "mto": "muito",
     }
 
-    texto = texto.lower()
-    all_terms = []
-    key_for_term = {}
-    for key, terms in mapping.items():
-        for term in terms:
-            all_terms.append(term)
-            key_for_term[term] = key
+    text_format = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('ASCII')
+    text_clean = text_format.translate(str.maketrans('', '', string.punctuation)).lower()
 
-    match, score, _ = process.extractOne(texto, all_terms, scorer=fuzz.partial_ratio)
-    if score >= 80:
-        print(key_for_term[match])
-        return key_for_term[match]
+    # Aplica substituições palavra por palavra
+    words = text_clean.split()
+    normalized_words = [substitutions.get(word, word) for word in words]
+
+    return " ".join(normalized_words).strip()
+
+def identify_art(prompt_user):
+    if "joelho direito" in prompt_user:
+        return "kneeRangle"
+    elif "joelho esquerdo" in prompt_user:
+        return "kneeLangle"
+    elif "cotovelo direito" in prompt_user:
+        return "elbowRangle"
+    elif "cotovelo esquerdo" in prompt_user:
+        return "elbowLangle"
+    elif "ombro direito" in prompt_user:
+        return "shoulderRangle"
+    elif "ombro esquerdo" in prompt_user:
+        return "shoulderLangle"
     else:
         return None
+    
+def chatbot_brain(prompt_user, file_patient, file_training, name_patient):
+    phrases_per_section = defaultdict(list)
 
-def answer(df, question):
-    intent = predict(question) 
-    art = extract(question)
+    try:
+        doc = supabase.storage.from_("pacientes").download(file_patient)
+        text_data = io.StringIO(doc.decode("utf-8"))
+        df = pd.read_csv(text_data)
+    except Exception as e:
+        return f"❌ Erro ao carregar documento do paciente {name_patient}: {e}"
 
-    nomes = {
-        "kneeLangle": "Joelho Esquerdo",
-        "kneeRangle": "Joelho Direito",
-        "elbowLangle": "Cotovelo Esquerdo",
-        "elbowRangle": "Cotovelo Direito",
-        "shoulderLangle": "Ombro Esquerdo",
-        "shoulderRangle": "Ombro Direito"
+    try:
+        with open(file_training, "r", encoding="utf-8") as f:
+            current_section = None
+            for line in f:
+                line = line.strip().lower()
+                if not line:
+                    continue
+                if line.startswith("---") and line.endswith("---"):
+                    current_section = line.strip("-")
+                elif current_section:
+                    phrases_per_section[current_section].append(line)
+    except Exception as e:
+        return f"❌ Erro ao carregar o arquivo de treinamento: {e}"
+
+
+    prompt_user = clean_text(prompt_user)
+    column_name = identify_art(prompt_user)
+
+    answers = {
+        "saudacao": [
+            f"Olá! Me pergunte sobre o documento de {name_patient}!",
+            f"Eaí, Estou pronto para analisar o documento de {name_patient}. Pergunte algo!",
+            f"Opa! O que você deseja saber sobre o documento de {name_patient}?",
+            f"Pode me perguntar qualquer coisa sobre o documento do paciente {name_patient}!"
+        ],
+        "encerramento": [
+            "Valeu!", "Até mais!", "Tchau!", "Tamo junto!"
+        ],
+        "ajuda": [
+            "Pode me perguntar sobre o maior, menor ou média de ângulo de uma articulação",
+            "Você pode me perguntar sobre os ângulos de uma articulação",
+        ]
     }
 
-    print("Frase:", question)
-    print("Intent detectada:", predict(question))
-    print("Articulação detectada:", extract(question))
+    if column_name != None:
+        if column_name == "kneeLangle":
+            column_name_format = "joelho esquerdo"
+        elif column_name == "kneeRangle":
+            column_name_format = "joelho direito"
+        elif column_name == "elbowLangle":
+            column_name_format = "cotovelo esquerdo"
+        elif column_name == "elbowRangle":
+            column_name_format = "cotovelo direito"
+        elif column_name == "shoulderLangle":
+            column_name_format = "ombro esquerdo"
+        elif column_name == "shoulderRangle":
+            column_name_format = "ombro direito"
+        else:
+            column_name_format = column_name
 
-    if intent == "saudacao":
-        return {"text": random.choice(saudacoes)}
+        max_val = df[column_name].max()
+        min_val = df[column_name].min()
+        med_val = df[column_name].mean()
 
-    if intent == "encerramento":
-        return {"text": random.choice(encerramentos)}
+        answers.update({
+            "maior_angulo": [f"O maior ângulo do {column_name_format} é **{max_val:.2f}**!"],
+            "menor_angulo": [f"O menor ângulo do {column_name_format} é **{min_val:.2f}**!"],
+            "media_angulo": [f"A média dos ângulos do {column_name_format} é **{med_val:.2f}**!"]
+        })
 
-    if intent in ["maior_angulo", "menor_angulo", "media_angulo", "amplitude_angulo"]:
-        if art is None:
-            return "Você deseja o valor de qual articulação?"
-        if art not in df.columns:
-            return f"Desculpe, a articulação '{nomes.get(art, art)}' não está presente nos dados."
+    for category in ["saudacao", "encerramento", "ajuda", "maior_angulo", "menor_angulo", "media_angulo"]:
+        for word_train in phrases_per_section[category]:
+            if contains_word(clean_text(word_train), prompt_user):
+                return random.choice(answers[category])
 
-        if intent == "maior_angulo":
-            val = df[art].max()
-            return f"O maior ângulo do {nomes[art]} é **{val:.1f}°**."
-        elif intent == "menor_angulo":
-            val = df[art].min()
-            return f"O menor ângulo do {nomes[art]} é **{val:.1f}°**."
-        elif intent == "media_angulo":
-            val = df[art].mean()
-            return f"A média dos ângulos do {nomes[art]} é **{val:.1f}°**."
-        elif intent == "amplitude_angulo":
-            val = df[art].max() - df[art].min()
-            return f"A amplitude de movimento do {nomes[art]} é **{val:.1f}°**."
-
-    return "Desculpe, não entendi sua pergunta."
-
+    return "Desculpe, não entendi"

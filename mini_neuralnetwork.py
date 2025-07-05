@@ -58,7 +58,6 @@ def clean_text(text):
     text_format = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('ASCII')
     text_clean = text_format.translate(str.maketrans('', '', string.punctuation)).lower()
 
-    # Aplica substituições palavra por palavra
     words = text_clean.split()
     normalized_words = [substitutions.get(word, word) for word in words]
 
@@ -82,13 +81,17 @@ def identify_art(prompt_user):
     
 def chatbot_brain(prompt_user, file_patient, file_training, name_patient):
     phrases_per_section = defaultdict(list)
-
-    try:
-        doc = supabase.storage.from_("pacientes").download(file_patient)
-        text_data = io.StringIO(doc.decode("utf-8"))
-        df = pd.read_csv(text_data)
-    except Exception as e:
-        return f"❌ Erro ao carregar documento do paciente {name_patient}: {e}"
+    df = None
+    
+    if isinstance(file_patient, str):
+        try:
+            doc = supabase.storage.from_("pacientes").download(file_patient)
+            text_data = io.StringIO(doc.decode("utf-8"))
+            df = pd.read_csv(text_data)
+        except Exception as e:
+            return f"❌ Erro ao carregar documento do paciente {name_patient}: {e}"
+    elif isinstance(file_patient, pd.DataFrame):
+        df = file_patient
 
     try:
         with open(file_training, "r", encoding="utf-8") as f:
@@ -104,55 +107,74 @@ def chatbot_brain(prompt_user, file_patient, file_training, name_patient):
     except Exception as e:
         return f"❌ Erro ao carregar o arquivo de treinamento: {e}"
 
+    if df:
+        prompt_user = clean_text(prompt_user)
+        column_name = identify_art(prompt_user)
 
-    prompt_user = clean_text(prompt_user)
-    column_name = identify_art(prompt_user)
-
-    answers = {
-        "saudacao": [
-            f"Olá! Me pergunte sobre o documento de {name_patient}!",
-            f"Eaí, Estou pronto para analisar o documento de {name_patient}. Pergunte algo!",
-            f"Opa! O que você deseja saber sobre o documento de {name_patient}?",
-            f"Pode me perguntar qualquer coisa sobre o documento do paciente {name_patient}!"
-        ],
-        "encerramento": [
-            "Valeu!", "Até mais!", "Tchau!", "Tamo junto!"
-        ],
-        "ajuda": [
-            "Pode me perguntar sobre o maior, menor ou média de ângulo de uma articulação",
-            "Você pode me perguntar sobre os ângulos de uma articulação",
-        ]
-    }
-
-    if column_name != None:
-        if column_name == "kneeLangle":
-            column_name_format = "joelho esquerdo"
-        elif column_name == "kneeRangle":
-            column_name_format = "joelho direito"
-        elif column_name == "elbowLangle":
-            column_name_format = "cotovelo esquerdo"
-        elif column_name == "elbowRangle":
-            column_name_format = "cotovelo direito"
-        elif column_name == "shoulderLangle":
-            column_name_format = "ombro esquerdo"
-        elif column_name == "shoulderRangle":
-            column_name_format = "ombro direito"
+        if name_patient:
+            answers = {
+                "saudacao": [
+                    f"Olá! Me pergunte sobre o documento de {name_patient}!",
+                    f"Eaí, Estou pronto para analisar o documento de {name_patient}. Pergunte algo!",
+                    f"Opa! O que você deseja saber sobre o documento de {name_patient}?",
+                    f"Pode me perguntar qualquer coisa sobre o documento do paciente {name_patient}!"
+                ],
+                "encerramento": [
+                    "Valeu!", "Até mais!", "Tchau!", "Tamo junto!"
+                ],
+                "ajuda": [
+                    "Pode me perguntar sobre o maior, menor ou média de ângulo de uma articulação",
+                    "Você pode me perguntar sobre os ângulos de uma articulação",
+                ]
+            }
         else:
-            column_name_format = column_name
+            answers = {
+                "saudacao": [
+                    f"Olá! Me pergunte sobre o documento do paciete!",
+                    f"Eaí, Estou pronto para analisar o documento do paciente. Pergunte algo!",
+                    f"Opa! O que você deseja saber sobre o documento do paciente?",
+                    f"Pode me perguntar qualquer coisa sobre o documento do paciente!"
+                ],
+                "encerramento": [
+                    "Valeu!", "Até mais!", "Tchau!", "Tamo junto!"
+                ],
+                "ajuda": [
+                    "Pode me perguntar sobre o maior, menor ou média de ângulo de uma articulação",
+                    "Você pode me perguntar sobre os ângulos de uma articulação",
+                ]
+            }
 
-        max_val = df[column_name].max()
-        min_val = df[column_name].min()
-        med_val = df[column_name].mean()
+        if column_name != None:
+            if column_name == "kneeLangle":
+                column_name_format = "joelho esquerdo"
+            elif column_name == "kneeRangle":
+                column_name_format = "joelho direito"
+            elif column_name == "elbowLangle":
+                column_name_format = "cotovelo esquerdo"
+            elif column_name == "elbowRangle":
+                column_name_format = "cotovelo direito"
+            elif column_name == "shoulderLangle":
+                column_name_format = "ombro esquerdo"
+            elif column_name == "shoulderRangle":
+                column_name_format = "ombro direito"
+            else:
+                column_name_format = column_name
 
-        answers.update({
-            "maior_angulo": [f"O maior ângulo do {column_name_format} é **{max_val:.2f}**!"],
-            "menor_angulo": [f"O menor ângulo do {column_name_format} é **{min_val:.2f}**!"],
-            "media_angulo": [f"A média dos ângulos do {column_name_format} é **{med_val:.2f}**!"]
-        })
+            max_val = df[column_name].max()
+            min_val = df[column_name].min()
+            med_val = df[column_name].mean()
 
-    for category in ["saudacao", "encerramento", "ajuda", "maior_angulo", "menor_angulo", "media_angulo"]:
-        for word_train in phrases_per_section[category]:
-            if contains_word(clean_text(word_train), prompt_user):
-                return random.choice(answers[category])
+            answers.update({
+                "maior_angulo": [f"O maior ângulo do {column_name_format} é **{max_val:.2f}**!"],
+                "menor_angulo": [f"O menor ângulo do {column_name_format} é **{min_val:.2f}**!"],
+                "media_angulo": [f"A média dos ângulos do {column_name_format} é **{med_val:.2f}**!"]
+            })
 
-    return "Desculpe, não entendi"
+        for category in ["saudacao", "encerramento", "ajuda", "maior_angulo", "menor_angulo", "media_angulo"]:
+            for word_train in phrases_per_section[category]:
+                if contains_word(clean_text(word_train), prompt_user):
+                    return random.choice(answers[category])
+
+        return "Desculpe, não entendi"
+    else:
+        return "Faça upload do arquivo CSV primeiro! ☝️"

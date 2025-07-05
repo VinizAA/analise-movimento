@@ -355,20 +355,31 @@ def chatbot():
     st.title("Chatbot")
 
     pacientes_dict = st.session_state.get("pacientes_dict", {})
-    
+    ph_patient = st.empty()
+    file_patient = None
+
     if not pacientes_dict:
-        st.warning("Nenhum paciente cadastrado.")
-        return
+        if not st.session_state.get("key_warning", False):
+            ph_patient.warning("Nenhum paciente cadastrado.")
 
-    nome_selecionado = st.selectbox("Qual o documento que deseja que o chatbot analise?", list(pacientes_dict.keys()), placeholder="Selecione o paciente")
+        uploaded_file = st.file_uploader("Faça upload do arquivo", type=["csv", "xlsx"])
+        if uploaded_file:
+            if uploaded_file.name.endswith(('.csv')):
+                file_patient = pd.read_csv(uploaded_file)
+            elif uploaded_file.name.endswith(('.xlsx')):
+                file_patient = pd.read_excel(uploaded_file)
 
-    paciente_info = pacientes_dict[nome_selecionado]
-    file_patient = paciente_info["documento_url"]
-    ph_sucess = st.empty()
+        nome_selecionado = ""
+    else:
+        nome_selecionado = st.selectbox("Qual o documento que deseja que o chatbot analise?", list(pacientes_dict.keys()), placeholder="Selecione o paciente")
 
-    key_success = f"loading_shown_{slugify(nome_selecionado)}"
-    if not st.session_state.get(key_success, False):
-        ph_sucess.success(f"Documento de {nome_selecionado} selecionado: {file_patient}")
+        paciente_info = pacientes_dict[nome_selecionado]
+        file_patient = paciente_info["documento_url"]
+        ph_sucess = st.empty()
+
+        key_success = f"loading_shown_{slugify(nome_selecionado)}"
+        if not st.session_state.get(key_success, False):
+            ph_sucess.success(f"Documento de {nome_selecionado} selecionado: {file_patient}")
     
     st.divider()
 
@@ -384,18 +395,28 @@ def chatbot():
             st.markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        msg_chat = chatbot_brain(prompt, file_patient, "training_data.txt", nome_selecionado)
+        if nome_selecionado:
+            msg_chat = chatbot_brain(prompt, file_patient, "training_data.txt", nome_selecionado)
+        else:
+            msg_chat = chatbot_brain(prompt, file_patient, "training_data.txt", "")
 
         if msg_chat:
             with st.chat_message("ai"):
                 st.write_stream(stream(msg_chat))
             st.session_state.messages.append({"role": "ai", "content": msg_chat})
 
-    if not st.session_state.get(key_success, False):
-        time.sleep(2)
-        ph_sucess.empty()
-    
-    st.session_state[key_success] = True
+    if pacientes_dict:
+        if not st.session_state.get(key_success, False):
+            time.sleep(2)
+            ph_sucess.empty()
+        
+        st.session_state[key_success] = True
+    else:
+        if not st.session_state.get("key_warning", False):
+            time.sleep(2)
+            ph_patient.empty()
+        
+        st.session_state["key_warning"] = True
 
 def edit_patient():
     st.set_page_config(page_title="Editar Paciente", page_icon=":material/edit:", layout="wide")
@@ -519,7 +540,6 @@ def edit_patient():
                     #home(nome_completo)
                     time.sleep(2)
                     st.rerun()
-
 
 #páginas
 def create_pacientes():
@@ -684,7 +704,10 @@ def main_app_guest():
         data = None
 
         if uploaded_file is not None:
-            data = pd.read_csv(uploaded_file)
+            if uploaded_file.name.endswith(".csv"):
+                data = pd.read_csv(uploaded_file)
+            elif uploaded_file.name.endswith(".xlsx"):
+                data = pd.read_excel(uploaded_file)
 
     if data is not None: 
         st.set_page_config(page_title="Análise do movimento", page_icon=":material/analytics:", layout="wide")

@@ -1,8 +1,8 @@
-from collections import defaultdict
-import random, unicodedata, string
-import streamlit as st
 import pandas as pd
-import io, re
+import streamlit as st
+from transformers import AutoTokenizer, AutoModel
+from transformers import pipeline
+import torch, io, random
 
 from supabase import create_client
 
@@ -11,170 +11,189 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def contains_word(word, text):
-    return re.search(rf"\b{re.escape(word)}\b", text) is not None
+#df = pd.read_csv("/home/vinicius/Downloads/20250527-123820_Obstacles-vinicius.csv")
 
-def clean_text(text):
-    substitutions = {
-        "vc": "voce",
-        "vcs": "voces",
-        "c": "voce",
-        "td": "tudo",
-        "q": "que",
-        "pq": "porque",
-        "pqc": "por que",
-        "oq": "o que",
-        "kd": "cadê",
-        "tb": "tambem",
-        "tbm": "tambem",
-        "blz": "beleza",
-        "vlw": "valeu",
-        "flw": "falou",
-        "obg": "obrigado",
-        "dps": "depois",
-        "msg": "mensagem",
-        "hj": "hoje",
-        "bjs": "beijos",
-        "fds": "fim de semana",
-        "pfv": "por favor",
-        "pls": "por favor",
-        "agr": "agora",
+intents = {
+    "maior_angulo_joelho_esquerdo": [
+        "qual o maior ângulo do joelho esquerdo",
+        "ângulo máximo do joelho esquerdo",
+        "maior valor do joelho L",
+        "qual foi o pico do joelho esquerdo",
+        "qual valor mais alto do joelho esquerdo",
+        "joelho esquerdo chegou até quanto?",
+        "qual foi o maior grau no joelho L"
+    ],
 
-        "eh": "é",
-        "ta": "esta",
-        "tá": "esta",
-        "to": "estou",
-        "tô": "estou",
-        "tamo": "estamos",
-        "vamo": "vamos",
-        "num": "nao",
-        "n": "nao",
-        "naum": "nao",
-        "ñ": "nao",
-        "mt": "muito",
-        "mto": "muito",
-    }
+    "maior_angulo_joelho_direito": [
+        "qual o maior ângulo do joelho direito",
+        "ângulo máximo do joelho direito",
+        "maior valor do joelho R",
+        "joelho direito chegou até quanto?",
+        "qual valor mais alto no joelho direito",
+        "qual foi o pico do joelho direito",
+        "quanto deu o ângulo máximo do joelho R"
+    ],
 
-    text_format = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('ASCII')
-    text_clean = text_format.translate(str.maketrans('', '', string.punctuation)).lower()
+    "menor_angulo_joelho_direito": [
+        "menor ângulo do joelho direito",
+        "mínimo do joelho R",
+        "qual foi o menor valor no joelho direito",
+        "joelho R chegou até qual mínimo?",
+        "qual menor grau do joelho direito",
+        "qual valor mais baixo do joelho direito"
+    ],
 
-    words = text_clean.split()
-    normalized_words = [substitutions.get(word, word) for word in words]
+    "media_angulo_ombro_direito": [
+        "qual a média do ombro direito",
+        "média ângulo ombro R",
+        "média do ombro direito",
+        "qual foi a média do ombro R",
+        "média dos movimentos do ombro direito",
+        "qual o valor médio do ombro R",
+        "ombro direito teve qual média de ângulos?"
+    ],
 
-    return " ".join(normalized_words).strip()
+    "saudacao": [
+        "oi",
+        "olá",
+        "bom dia",
+        "boa tarde",
+        "boa noite",
+        "e aí",
+        "fala",
+        "salve"
+    ],
 
-def identify_art(prompt_user):
-    if "joelho direito" in prompt_user:
-        return "kneeRangle"
-    elif "joelho esquerdo" in prompt_user:
-        return "kneeLangle"
-    elif "cotovelo direito" in prompt_user:
-        return "elbowRangle"
-    elif "cotovelo esquerdo" in prompt_user:
-        return "elbowLangle"
-    elif "ombro direito" in prompt_user:
-        return "shoulderRangle"
-    elif "ombro esquerdo" in prompt_user:
-        return "shoulderLangle"
-    else:
-        return None
-    
-def chatbot_brain(prompt_user, file_patient, file_training, name_patient):
-    phrases_per_section = defaultdict(list)
+    "encerramento": [
+        "tchau",
+        "obrigado",
+        "valeu",
+        "até mais",
+        "até logo",
+        "flw",
+        "até a próxima",
+        "encerra aí"
+    ]
+}
+
+texts = []
+labels = []
+for label, exemplos in intents.items():
+    for ex in exemplos:
+        texts.append(ex)
+        labels.append(label)
+
+tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+model = AutoModel.from_pretrained("distilbert-base-uncased")
+
+from sklearn.preprocessing import LabelEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.base import BaseEstimator, TransformerMixin
+
+class BERTVectorizer(BaseEstimator, TransformerMixin):
+    def __init__(self, tokenizer, model):
+        self.tokenizer = tokenizer
+        self.model = model.eval()
+
+    def transform(self, X):
+        embeddings = []
+        for sentence in X:
+            inputs = self.tokenizer(sentence, return_tensors="pt", truncation=True, padding=True)
+            with torch.no_grad():
+                outputs = self.model(**inputs)
+                cls_embedding = outputs.last_hidden_state[:, 0, :].detach().cpu().numpy().flatten()
+                embeddings.append(cls_embedding)
+        return embeddings
+
+    def fit(self, X, y=None):
+        return self
+
+label_encoder = LabelEncoder()
+y_encoded = label_encoder.fit_transform(labels)
+
+pipeline_model = Pipeline([("bert_vec", BERTVectorizer(tokenizer, model)), ("clf", LogisticRegression(max_iter=1000))])
+pipeline_model.fit(texts, y_encoded)
+
+def chatbot_brain(prompt, file_patient, username, name_patient):
     df = None
-    
+
     if isinstance(file_patient, str):
-        try:
-            doc = supabase.storage.from_("pacientes").download(file_patient)
-            text_data = io.StringIO(doc.decode("utf-8"))
-            df = pd.read_csv(text_data)
-        except Exception as e:
-            return f"❌ Erro ao carregar documento do paciente {name_patient}: {e}"
+        doc = supabase.storage.from_("pacientes").download(file_patient)
+        text_data = io.StringIO(doc.decode("utf-8"))
+        df = pd.read_csv(text_data)
     elif isinstance(file_patient, pd.DataFrame):
         df = file_patient
 
-    try:
-        with open(file_training, "r", encoding="utf-8") as f:
-            current_section = None
-            for line in f:
-                line = line.strip().lower()
-                if not line:
-                    continue
-                if line.startswith("---") and line.endswith("---"):
-                    current_section = line.strip("-")
-                elif current_section:
-                    phrases_per_section[current_section].append(line)
-    except Exception as e:
-        return f"❌ Erro ao carregar o arquivo de treinamento: {e}"
+    vec = [prompt]
+    pred = pipeline_model.predict(vec)
+    intent = label_encoder.inverse_transform(pred)[0]
 
-    if df:
-        prompt_user = clean_text(prompt_user)
-        column_name = identify_art(prompt_user)
+    if df is not None:
+        if intent == "maior_angulo_joelho_esquerdo":
+            valor = df['kneeLangle'].max()
+            return f"O maior ângulo do joelho esquerdo é {valor:.2f}º."
+        elif intent == "menor_angulo_joelho_esquerdo":
+            valor = df['kneeLangle'].min()
+            return f"O menor ângulo do joelho esquerdo é {valor:.2f}º."
+        elif intent == "maior_angulo_joelho_direito":
+            valor = df['kneeRangle'].max()
+            return f"O maior ângulo do joelho direito é {valor:.2f}º."
+        elif intent == "menor_angulo_joelho_direito":
+            valor = df['kneeRangle'].min()
+            return f"O menor ângulo do joelho direito é {valor:.2f}º."
 
-        if name_patient:
-            answers = {
-                "saudacao": [
-                    f"Olá! Me pergunte sobre o documento de {name_patient}!",
-                    f"Eaí, Estou pronto para analisar o documento de {name_patient}. Pergunte algo!",
-                    f"Opa! O que você deseja saber sobre o documento de {name_patient}?",
-                    f"Pode me perguntar qualquer coisa sobre o documento do paciente {name_patient}!"
-                ],
-                "encerramento": [
-                    "Valeu!", "Até mais!", "Tchau!", "Tamo junto!"
-                ],
-                "ajuda": [
-                    "Pode me perguntar sobre o maior, menor ou média de ângulo de uma articulação",
-                    "Você pode me perguntar sobre os ângulos de uma articulação",
-                ]
-            }
-        else:
-            answers = {
-                "saudacao": [
-                    f"Olá! Me pergunte sobre o documento do paciete!",
-                    f"Eaí, Estou pronto para analisar o documento do paciente. Pergunte algo!",
-                    f"Opa! O que você deseja saber sobre o documento do paciente?",
-                    f"Pode me perguntar qualquer coisa sobre o documento do paciente!"
-                ],
-                "encerramento": [
-                    "Valeu!", "Até mais!", "Tchau!", "Tamo junto!"
-                ],
-                "ajuda": [
-                    "Pode me perguntar sobre o maior, menor ou média de ângulo de uma articulação",
-                    "Você pode me perguntar sobre os ângulos de uma articulação",
-                ]
-            }
+        # OMBRO
+        elif intent == "maior_angulo_ombro_esquerdo":
+            valor = df['shoulderLangle'].max()
+            return f"O maior ângulo do ombro esquerdo é {valor:.2f}º."
+        elif intent == "menor_angulo_ombro_esquerdo":
+            valor = df['shoulderLangle'].min()
+            return f"O menor ângulo do ombro esquerdo é {valor:.2f}º."
+        elif intent == "maior_angulo_ombro_direito":
+            valor = df['shoulderRangle'].max()
+            return f"O maior ângulo do ombro direito é {valor:.2f}º."
+        elif intent == "menor_angulo_ombro_direito":
+            valor = df['shoulderRangle'].min()
+            return f"O menor ângulo do ombro direito é {valor:.2f}º."
 
-        if column_name != None:
-            if column_name == "kneeLangle":
-                column_name_format = "joelho esquerdo"
-            elif column_name == "kneeRangle":
-                column_name_format = "joelho direito"
-            elif column_name == "elbowLangle":
-                column_name_format = "cotovelo esquerdo"
-            elif column_name == "elbowRangle":
-                column_name_format = "cotovelo direito"
-            elif column_name == "shoulderLangle":
-                column_name_format = "ombro esquerdo"
-            elif column_name == "shoulderRangle":
-                column_name_format = "ombro direito"
+        # COTOVELO
+        elif intent == "maior_angulo_cotovelo_esquerdo":
+            valor = df['elbowLangle'].max()
+            return f"O maior ângulo do cotovelo esquerdo é {valor:.2f}º."
+        elif intent == "menor_angulo_cotovelo_esquerdo":
+            valor = df['elbowLangle'].min()
+            return f"O menor ângulo do cotovelo esquerdo é {valor:.2f}º."
+        elif intent == "maior_angulo_cotovelo_direito":
+            valor = df['elbowRangle'].max()
+            return f"O maior ângulo do cotovelo direito é {valor:.2f}º."
+        elif intent == "menor_angulo_cotovelo_direito":
+            valor = df['elbowRangle'].min()
+            return f"O menor ângulo do cotovelo direito é {valor:.2f}º."
+
+        # OUTROS
+        elif intent == "saudacao":
+            if name_patient:
+                return random.choice([
+                    f"Olá {username}! Posso ajudar na análise dos movimentos do paciente {name_patient}",
+                    f"Oi {username}! Pode me perguntar sobre máximos, mínimos e média dos ângulos.",
+                    f"Eai {username}! Como posso ajudar com o documento de {name_patient}?"
+                ])
             else:
-                column_name_format = column_name
-
-            max_val = df[column_name].max()
-            min_val = df[column_name].min()
-            med_val = df[column_name].mean()
-
-            answers.update({
-                "maior_angulo": [f"O maior ângulo do {column_name_format} é **{max_val:.2f}**!"],
-                "menor_angulo": [f"O menor ângulo do {column_name_format} é **{min_val:.2f}**!"],
-                "media_angulo": [f"A média dos ângulos do {column_name_format} é **{med_val:.2f}**!"]
-            })
-
-        for category in ["saudacao", "encerramento", "ajuda", "maior_angulo", "menor_angulo", "media_angulo"]:
-            for word_train in phrases_per_section[category]:
-                if contains_word(clean_text(word_train), prompt_user):
-                    return random.choice(answers[category])
-
-        return "Desculpe, não entendi"
+                return random.choice([
+                    f"Olá {username}! Posso ajudar na análise dos movimentos do paciente!",
+                    f"Oi {username}! Pode me perguntar sobre máximos, mínimos e média dos ângulos.",
+                    f"Eai {username}! Como posso ajudar com o documento?"
+                ])
+        elif intent == "encerramento":
+            return random.choice([
+                f"Até logo {username}! Qualquer coisa é só chamar.",
+                f"Encerrando por aqui.",
+                f"Tchau {username}! Estou à disposição se precisar novamente.",
+                f"Foi um prazer ajudar. {username}. Até a próxima!",
+                f"Encerrando a análise do paciente {name_patient}. Até mais {username}!"
+            ])
+        else:
+            return f"Desculpe {username}, não entendi"
     else:
-        return "Faça upload do arquivo CSV primeiro! ☝️"
+        return f"{username.captilize()}, você precisa fazer upload do arquivo CSV/XLSX primeiro! ☝️"

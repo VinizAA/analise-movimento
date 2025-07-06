@@ -390,15 +390,17 @@ def chatbot():
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
+    username = st.session_state.get("username", "usuário")
+
     if prompt := st.chat_input("Faça sua pergunta"):
         with st.chat_message("user"):
             st.markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
         if nome_selecionado:
-            msg_chat = chatbot_brain(prompt, file_patient, "training_data.txt", nome_selecionado)
+            msg_chat = chatbot_brain(prompt, file_patient, username, nome_selecionado)
         else:
-            msg_chat = chatbot_brain(prompt, file_patient, "training_data.txt", "")
+            msg_chat = chatbot_brain(prompt, file_patient, username, "")
 
         if msg_chat:
             with st.chat_message("ai"):

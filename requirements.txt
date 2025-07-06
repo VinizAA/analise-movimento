@@ -11,3 +11,5 @@ rapidfuzz>=3.6.1
 pyspellchecker
 python-dateutil
 chatterbot
+transformers
+

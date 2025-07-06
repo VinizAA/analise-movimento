@@ -11,7 +11,6 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-#df = pd.read_csv("/home/vinicius/Downloads/20250527-123820_Obstacles-vinicius.csv")
 
 intents = {
     "maior_angulo_joelho_esquerdo": [
@@ -21,7 +20,14 @@ intents = {
         "qual foi o pico do joelho esquerdo",
         "qual valor mais alto do joelho esquerdo",
         "joelho esquerdo chegou até quanto?",
-        "qual foi o maior grau no joelho L"
+        "qual foi o maior grau no joelho L",
+        "me fala o ângulo máximo do joelho esquerdo",
+        "qual o maior grau que o joelho esquerdo atingiu?",
+        "qual a maior abertura do joelho esquerdo?",
+        "pico de flexão do joelho esquerdo",
+        "máximo do joelho esquerdo",
+        "ângulo mais alto do joelho esquerdo",
+        "recorde de ângulo do joelho esquerdo"
     ],
 
     "maior_angulo_joelho_direito": [
@@ -31,7 +37,14 @@ intents = {
         "joelho direito chegou até quanto?",
         "qual valor mais alto no joelho direito",
         "qual foi o pico do joelho direito",
-        "quanto deu o ângulo máximo do joelho R"
+        "quanto deu o ângulo máximo do joelho R",
+        "me informa o maior ângulo do joelho direito",
+        "qual o maior grau que o joelho direito fez?",
+        "qual a maior abertura do joelho direito?",
+        "pico de extensão do joelho direito",
+        "máximo do joelho direito",
+        "ângulo mais alto do joelho direito",
+        "recorde de ângulo do joelho direito"
     ],
 
     "menor_angulo_joelho_direito": [
@@ -40,7 +53,14 @@ intents = {
         "qual foi o menor valor no joelho direito",
         "joelho R chegou até qual mínimo?",
         "qual menor grau do joelho direito",
-        "qual valor mais baixo do joelho direito"
+        "qual valor mais baixo do joelho direito",
+        "me diz o menor ângulo do joelho direito",
+        "qual a menor abertura do joelho direito?",
+        "piso de flexão do joelho direito",
+        "mínimo do joelho direito",
+        "menor grau do joelho direito",
+        "o joelho direito atingiu qual mínimo?",
+        "qual foi o ângulo mínimo do joelho direito?"
     ],
 
     "media_angulo_ombro_direito": [
@@ -50,7 +70,13 @@ intents = {
         "qual foi a média do ombro R",
         "média dos movimentos do ombro direito",
         "qual o valor médio do ombro R",
-        "ombro direito teve qual média de ângulos?"
+        "ombro direito teve qual média de ângulos?",
+        "me informa a média do ângulo do ombro direito",
+        "qual a média geral do ombro direito?",
+        "média de movimento do ombro R",
+        "qual a média de flexão do ombro direito?",
+        "o ombro direito teve qual valor médio?",
+        "média do ângulo do ombro direito"
     ],
 
     "saudacao": [
@@ -61,7 +87,15 @@ intents = {
         "boa noite",
         "e aí",
         "fala",
-        "salve"
+        "salve",
+        "opa",
+        "tudo bem?",
+        "como vai?",
+        "iae",
+        "alô",
+        "oi tudo bem?",
+        "fala aí",
+        "e aí beleza?"
     ],
 
     "encerramento": [
@@ -72,10 +106,18 @@ intents = {
         "até logo",
         "flw",
         "até a próxima",
-        "encerra aí"
+        "encerra aí",
+        "abraços",
+        "fui",
+        "vlw",
+        "obrigado pela ajuda",
+        "agradeço",
+        "até breve",
+        "falou",
+        "foi bom conversar",
+        "encerra a conversa"
     ]
 }
-
 texts = []
 labels = []
 for label, exemplos in intents.items():

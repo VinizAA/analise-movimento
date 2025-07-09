@@ -397,15 +397,15 @@ def chatbot():
             st.markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        if nome_selecionado:
-            msg_chat = chatbot_brain(prompt, file_patient, username, nome_selecionado)
-        else:
-            msg_chat = chatbot_brain(prompt, file_patient, username, "")
+        chat_history = [{"role": "system", "content": "Você fala português do Brasil."}]
+        chat_history.append({"role": "user", "content": prompt})
 
-        if msg_chat:
+        resposta_ia = chatbot_brain(chat_history)
+
+        if resposta_ia:
             with st.chat_message("ai"):
-                st.write_stream(stream(msg_chat))
-            st.session_state.messages.append({"role": "ai", "content": msg_chat})
+                st.write(resposta_ia)
+            st.session_state.messages.append({"role": "ai", "content": resposta_ia})
 
     if pacientes_dict:
         if not st.session_state.get(key_success, False):

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Paciente - DatAI{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="display-6 mb-0">
+                    <i class="fas fa-user-plus me-2 text-primary"></i>Novo Paciente
+                </h1>
+                <p class="text-muted mb-0">Cadastre um novo paciente no sistema</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Informações do Paciente
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nome" class="form-label">
+                                <i class="fas fa-user me-1"></i>Nome *
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="nome" name="nome" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="sobrenome" class="form-label">
+                                <i class="fas fa-user me-1"></i>Sobrenome *
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="sobrenome" name="sobrenome" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="sexo" class="form-label">
+                                <i class="fas fa-venus-mars me-1"></i>Sexo *
+                            </label>
+                            <select class="form-select form-select-lg" id="sexo" name="sexo" required>
+                                <option value="">Selecione...</option>
+                                <option value="M">Masculino</option>
+                                <option value="F">Feminino</option>
+                                <option value="O">Outro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="data_nascimento" class="form-label">
+                                <i class="fas fa-birthday-cake me-1"></i>Data de Nascimento *
+                            </label>
+                            <input type="date" class="form-control form-control-lg" id="data_nascimento" 
+                                   name="data_nascimento" min="{{ min_date }}" max="{{ max_date }}" required>
+                            <div class="form-text">A idade será calculada automaticamente</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="documentos" class="form-label">
+                            <i class="fas fa-file-upload me-1"></i>Documentos (CSV/Excel) *
+                        </label>
+                        <input type="file" class="form-control form-control-lg" id="documentos" 
+                               name="documentos" multiple accept=".csv,.xlsx,.xls" required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Selecione um ou mais arquivos CSV ou Excel com os dados do paciente
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Dica:</strong> Certifique-se de que os arquivos contenham colunas com "angle" no nome para análises de ângulos.
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-lg me-md-2">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>Cadastrar Paciente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control:focus, .form-select:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.alert-info {
+    background-color: rgba(52, 152, 219, 0.1);
+    border-color: rgba(52, 152, 219, 0.2);
+    color: #2c3e50;
+}
+</style>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validação de arquivos
+    const fileInput = document.getElementById('documentos');
+    const allowedExtensions = ['.csv', '.xlsx', '.xls'];
+    
+    fileInput.addEventListener('change', function() {
+        const files = this.files;
+        let validFiles = true;
+        
+        for (let i = 0; i < files.length; i++) {
+            const fileName = files[i].name.toLowerCase();
+            const isValid = allowedExtensions.some(ext => fileName.endsWith(ext));
+            
+            if (!isValid) {
+                validFiles = false;
+                break;
+            }
+        }
+        
+        if (!validFiles) {
+            alert('Por favor, selecione apenas arquivos CSV (.csv) ou Excel (.xlsx, .xls)');
+            this.value = '';
+        }
+    });
+    
+    // Preview dos arquivos selecionados
+    fileInput.addEventListener('change', function() {
+        const files = this.files;
+        if (files.length > 0) {
+            let fileList = '';
+            for (let i = 0; i < files.length; i++) {
+                fileList += `<i class="fas fa-file me-1"></i>${files[i].name}<br>`;
+            }
+            
+            // Remove preview anterior se existir
+            const existingPreview = document.querySelector('.file-preview');
+            if (existingPreview) {
+                existingPreview.remove();
+            }
+            
+            // Adiciona novo preview
+            const preview = document.createElement('div');
+            preview.className = 'file-preview mt-2 p-2 bg-light rounded';
+            preview.innerHTML = `<small class="text-muted">Arquivos selecionados:</small><br>${fileList}`;
+            fileInput.parentNode.appendChild(preview);
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

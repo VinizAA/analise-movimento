@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Análise Rápida - DatAI{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9 col-md-11">
+
+            {% if not stats %}
+            <div class="text-center mb-5">
+                <i class="fas fa-rocket fa-4x text-primary mb-3"></i>
+                <h1 class="display-5 fw-bold">Análise Rápida de Movimento</h1>
+                <p class="lead text-muted">
+                    Faça o upload do seu arquivo de dados e obtenha uma análise instantânea sem necessidade de cadastro.
+                </p>
+            </div>
+
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-cloud-upload-alt me-2"></i>Envie seu arquivo de análise
+                    </h4>
+                </div>
+                <div class="card-body p-lg-5 p-4">
+                    <form method="POST" enctype="multipart/form-data" class="upload-form">
+                        <div class="upload-area border-dashed border-2 border-primary rounded p-5 text-center mb-4"
+                             ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" ondragleave="dragLeaveHandler(event);">
+                            <i class="fas fa-file-upload fa-3x text-primary mb-3"></i>
+                            <h5 class="text-primary mb-2">Arraste e solte o arquivo aqui</h5>
+                            <p class="text-muted mb-3">ou clique para selecionar do seu computador</p>
+                            <input type="file" class="form-control d-none" id="file" name="file"
+                                   accept=".csv,.xlsx,.xls" required onchange="fileSelected(this)">
+                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('file').click()">
+                                <i class="fas fa-folder-open me-2"></i>Procurar Arquivo
+                            </button>
+                        </div>
+
+                        <div id="file-info" class="alert alert-info d-none align-items-center">
+                            <i class="fas fa-file-alt fa-2x me-3"></i>
+                            <div class="flex-grow-1">
+                                <strong id="file-name"></strong>
+                            </div>
+                            <button type="button" class="btn-close" aria-label="Close" onclick="clearFile()"></button>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg px-5" disabled id="submit-btn">
+                                <i class="fas fa-chart-line me-2"></i>Analisar Dados
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="mt-5">
+                        <h6 class="text-center text-muted mb-3">
+                            <i class="fas fa-info-circle me-2"></i>Formatos Suportados
+                        </h6>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <i class="fas fa-file-csv fa-2x text-success mb-2"></i>
+                                <div class="small text-muted">CSV</div>
+                            </div>
+                            <div class="col-4">
+                                <i class="fas fa-file-excel fa-2x text-success mb-2"></i>
+                                <div class="small text-muted">XLSX</div>
+                            </div>
+                            <div class="col-4">
+                                <i class="fas fa-file-excel fa-2x text-success mb-2"></i>
+                                <div class="small text-muted">XLS</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-5 text-center">
+                <div class="col-md-4 mb-3">
+                    <div class="p-4">
+                        <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+                        <h5>Seguro e Privado</h5>
+                        <p class="text-muted small">Seus dados são processados instantaneamente e não são armazenados em nossos servidores.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="p-4">
+                        <i class="fas fa-bolt fa-3x text-primary mb-3"></i>
+                        <h5>Rápido e Eficiente</h5>
+                        <p class="text-muted small">Receba estatísticas detalhadas e visualizações interativas em segundos.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="p-4">
+                        <i class="fas fa-cogs fa-3x text-warning mb-3"></i>
+                        <h5>Análise Automática</h5>
+                        <p class="text-muted small">Nossa ferramenta identifica automaticamente as colunas de tempo e ângulos.</p>
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="text-center mb-5">
+                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                <h1 class="display-5 fw-bold">Análise Concluída</h1>
+                <p class="lead text-muted">
+                    Abaixo estão os resultados extraídos do seu arquivo.
+                </p>
+            </div>
+            
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h4 class="card-title mb-0 text-center fw-bold text-primary">
+                        <i class="fas fa-chart-bar me-2"></i>Resumo Estatístico
+                    </h4>
+                </div>
+                <div class="card-body p-lg-5 p-4">
+                    <div class="row justify-content-center">
+                        {% for stat in stats %}
+                        <div class="col-lg-6 col-md-6 mb-4">
+                            <div class="card border-light h-100 shadow-sm stat-card">
+                                <div class="card-header bg-white border-0 text-center">
+                                    <h6 class="card-title text-dark fw-bold mb-0">
+                                        <i class="fas fa-ruler-combined me-2 text-primary"></i>{{ stat.name }}
+                                    </h6>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between text-center">
+                                        <div class="stat-item">
+                                            <div class="stat-value text-success h4 mb-1">{{ "%.2f"|format(stat.min) }}°</div>
+                                            <small class="text-muted">Mínimo</small>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-value text-primary h4 mb-1">{{ "%.2f"|format(stat.mean) }}°</div>
+                                            <small class="text-muted">Média</small>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-value text-danger h4 mb-1">{{ "%.2f"|format(stat.max) }}°</div>
+                                            <small class="text-muted">Máximo</small>
+                                        </div>
+                                    </div>
+                                    <div class="progress mt-3" style="height: 8px;">
+                                        {% if stat.max > stat.min %}
+                                        <div class="progress-bar" role="progressbar" style="width: {{ ((stat.mean - stat.min) / (stat.max - stat.min) * 100)|round }}%"></div>
+                                        {% else %}
+                                        <div class="progress-bar" role="progressbar" style="width: 100%"></div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-lg border-0 mb-5">
+                <div class="card-header bg-light">
+                    <h4 class="card-title mb-0 text-center fw-bold text-primary">
+                        <i class="fas fa-chart-area me-2"></i>Visualização dos Dados
+                    </h4>
+                </div>
+                <div class="card-body p-3">
+                    <div id="chart-container" style="width: 100%; height: 500px;"></div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                 <a href="{{ url_for('guest_analysis') }}" class="btn btn-primary btn-lg me-lg-3 mb-3">
+                    <i class="fas fa-redo-alt me-2"></i>Analisar Outro Arquivo
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-lg mb-3">
+                    <i class="fas fa-user-plus me-2"></i>Criar Conta para Salvar Histórico
+                </a>
+            </div>
+
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-dashed {
+        border-style: dashed !important;
+    }
+    .upload-area {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background-color: #f8f9fa;
+    }
+    .upload-area:hover, .upload-area.dragover {
+        background-color: #e9ecef;
+        border-color: #0d6efd !important;
+        transform: scale(1.02);
+    }
+    .stat-card {
+        transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+    }
+    .stat-value {
+        font-weight: 700;
+    }
+    .progress {
+        background-color: #e9ecef;
+        border-radius: 1rem;
+    }
+    .progress-bar {
+        background-color: #0d6efd;
+        border-radius: 1rem;
+    }
+    .card {
+        animation: fadeInUp 0.5s ease-out forwards;
+    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // A lógica do formulário de upload não precisa de alterações e pode ser omitida se você já a tiver.
+    const fileInput = document.getElementById('file');
+    const submitBtn = document.getElementById('submit-btn');
+    const fileInfo = document.getElementById('file-info');
+    const fileNameEl = document.getElementById('file-name');
+    const uploadArea = document.querySelector('.upload-area');
+
+    function handleFile(file) {
+        if (!file) { clearFile(); return; }
+        const allowedExtensions = ['.csv', '.xlsx', '.xls'];
+        const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+        if (allowedExtensions.includes(fileExtension)) {
+            fileNameEl.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+            fileInfo.classList.remove('d-none');
+            submitBtn.disabled = false;
+        } else {
+            alert('Formato de arquivo inválido. Use .csv, .xlsx ou .xls');
+            clearFile();
+        }
+    }
+    window.clearFile = function() {
+        fileInput.value = '';
+        fileInfo.classList.add('d-none');
+        submitBtn.disabled = true;
+    }
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    if(uploadArea) {
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+        window.dragOverHandler = (ev) => ev.preventDefault();
+        window.dropHandler = (ev) => {
+            ev.preventDefault();
+            const file = ev.dataTransfer.files[0];
+            if (file) {
+                fileInput.files = ev.dataTransfer.files;
+                handleFile(file);
+            }
+        };
+    }
+
+    {% if graph_angle %}
+        try {
+            // ## AJUSTE FINAL E DEFINITIVO AQUI: Adicionando o filtro | safe ##
+            // Isso garante que o objeto do gráfico seja impresso no HTML exatamente como deveria ser.
+            var fig_angle = {{ graph_angle | tojson | safe }};
+
+            // Adiciona um fallback para o layout para evitar erros
+            var layout = fig_angle.layout || {};
+            layout.font = { family: 'Inter, sans-serif' };
+            layout.margin = { l: 50, r: 25, t: 40, b: 50 };
+
+            Plotly.newPlot('chart-container', fig_angle.data, layout, {responsive: true});
+
+        } catch(e) {
+            console.error('Erro ao renderizar o gráfico Plotly:', e);
+            document.getElementById('chart-container').innerText = 'Ocorreu um erro ao exibir o gráfico.';
+        }
+    {% endif %}
+});
+</script>
+{% endblock %}

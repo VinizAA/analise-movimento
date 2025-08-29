@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Paciente - DatAI{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="display-6 mb-0">
+                    <i class="fas fa-user-edit me-2 text-primary"></i>Editar Paciente
+                </h1>
+                <p class="text-muted mb-0">Atualize as informações do paciente</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-success text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Informações do Paciente #{{ paciente.id }}
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nome" class="form-label">
+                                <i class="fas fa-user me-1"></i>Nome *
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="nome" name="nome" 
+                                   value="{{ paciente.nome }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="sobrenome" class="form-label">
+                                <i class="fas fa-user me-1"></i>Sobrenome *
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="sobrenome" name="sobrenome" 
+                                   value="{{ paciente.sobrenome }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="sexo" class="form-label">
+                                <i class="fas fa-venus-mars me-1"></i>Sexo *
+                            </label>
+                            <select class="form-select form-select-lg" id="sexo" name="sexo" required>
+                                <option value="">Selecione...</option>
+                                <option value="M" {{ 'selected' if paciente.sexo == 'M' }}>Masculino</option>
+                                <option value="F" {{ 'selected' if paciente.sexo == 'F' }}>Feminino</option>
+                                <option value="O" {{ 'selected' if paciente.sexo == 'O' }}>Outro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="data_nascimento" class="form-label">
+                                <i class="fas fa-birthday-cake me-1"></i>Data de Nascimento *
+                            </label>
+                            <input type="date" class="form-control form-control-lg" id="data_nascimento" 
+                                   name="data_nascimento" value="{{ paciente.data_nascimento }}" required>
+                            <div class="form-text">Idade atual: {{ paciente.idade }} anos</div>
+                        </div>
+                    </div>
+
+                    <!-- Documentos Atuais -->
+                    {% if current_docs %}
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-file-alt me-1"></i>Documentos Atuais
+                        </label>
+                        <div class="card">
+                            <div class="card-body">
+                                {% for url, original_name in current_docs %}
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div>
+                                        <i class="fas fa-file-csv me-2 text-primary"></i>
+                                        <span>{{ original_name }}</span>
+                                    </div>
+                                    <span class="badge bg-success">Ativo</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Novos Documentos -->
+                    <div class="mb-4">
+                        <label for="novos_documentos" class="form-label">
+                            <i class="fas fa-file-upload me-1"></i>Substituir Documentos (Opcional)
+                        </label>
+                        <input type="file" class="form-control form-control-lg" id="novos_documentos" 
+                               name="novos_documentos" multiple accept=".csv,.xlsx,.xls">
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Se selecionar novos arquivos, eles substituirão os documentos atuais
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção:</strong> Ao enviar novos documentos, os arquivos anteriores serão substituídos.
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-lg me-md-2">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-save me-2"></i>Atualizar Paciente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Card de Informações Adicionais -->
+        <div class="card mt-4 border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Informações do Sistema
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong><i class="fas fa-hashtag me-1"></i>ID do Paciente:</strong> {{ paciente.id }}<br>
+                        <strong><i class="fas fa-birthday-cake me-1"></i>Idade:</strong> {{ paciente.idade }} anos
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="fas fa-calendar me-1"></i>Data de Nascimento:</strong> 
+                        {{ paciente.data_nascimento }}<br>
+                        <strong><i class="fas fa-file-alt me-1"></i>Documentos:</strong> 
+                        {{ current_docs|length }} arquivo(s)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control:focus, .form-select:focus {
+    border-color: #27ae60;
+    box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.alert-warning {
+    background-color: rgba(243, 156, 18, 0.1);
+    border-color: rgba(243, 156, 18, 0.2);
+    color: #2c3e50;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+</style>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validação de arquivos
+    const fileInput = document.getElementById('novos_documentos');
+    const allowedExtensions = ['.csv', '.xlsx', '.xls'];
+    
+    fileInput.addEventListener('change', function() {
+        const files = this.files;
+        let validFiles = true;
+        
+        for (let i = 0; i < files.length; i++) {
+            const fileName = files[i].name.toLowerCase();
+            const isValid = allowedExtensions.some(ext => fileName.endsWith(ext));
+            
+            if (!isValid) {
+                validFiles = false;
+                break;
+            }
+        }
+        
+        if (!validFiles) {
+            alert('Por favor, selecione apenas arquivos CSV (.csv) ou Excel (.xlsx, .xls)');
+            this.value = '';
+        }
+    });
+    
+    // Preview dos novos arquivos selecionados
+    fileInput.addEventListener('change', function() {
+        const files = this.files;
+        
+        // Remove preview anterior se existir
+        const existingPreview = document.querySelector('.new-file-preview');
+        if (existingPreview) {
+            existingPreview.remove();
+        }
+        
+        if (files.length > 0) {
+            let fileList = '';
+            for (let i = 0; i < files.length; i++) {
+                fileList += `<div class="d-flex align-items-center mb-1">
+                    <i class="fas fa-file me-2 text-success"></i>
+                    <span>${files[i].name}</span>
+                    <span class="badge bg-warning ms-2">Novo</span>
+                </div>`;
+            }
+            
+            // Adiciona novo preview
+            const preview = document.createElement('div');
+            preview.className = 'new-file-preview mt-2 p-3 bg-light rounded border';
+            preview.innerHTML = `
+                <small class="text-muted d-block mb-2">
+                    <i class="fas fa-upload me-1"></i>Novos arquivos para upload:
+                </small>
+                ${fileList}
+            `;
+            fileInput.parentNode.appendChild(preview);
+        }
+    });
+
+    // Atualização da idade baseada na data de nascimento
+    const dateInput = document.getElementById('data_nascimento');
+    dateInput.addEventListener('change', function() {
+        if (this.value) {
+            const birthDate = new Date(this.value);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            
+            const formText = this.nextElementSibling;
+            formText.textContent = `Idade: ${age} anos`;
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

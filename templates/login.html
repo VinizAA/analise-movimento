@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Login - DatAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="text-center mb-4">
+            <i class="fas fa-chart-line fa-4x text-primary mb-3"></i>
+            <h2 class="mb-0">DatAI</h2>
+            <p class="text-muted">Sistema de Análise de Dados</p>
+        </div>
+
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-primary text-white text-center">
+                <ul class="nav nav-pills nav-justified" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active text-white" id="login-tab" data-bs-toggle="pill" data-bs-target="#login" type="button">
+                            <i class="fas fa-sign-in-alt me-1"></i>Entrar
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link text-white" id="register-tab" data-bs-toggle="pill" data-bs-target="#register" type="button">
+                            <i class="fas fa-user-plus me-1"></i>Cadastrar
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body p-4">
+                <div class="tab-content">
+                    <!-- Login Tab -->
+                    <div class="tab-pane fade show active" id="login" role="tabpanel">
+                        <form method="POST">
+                            <input type="hidden" name="action" value="login">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Usuário
+                                </label>
+                                <input type="text" class="form-control form-control-lg" id="username" name="username" required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="password" class="form-label">
+                                    <i class="fas fa-lock me-1"></i>Senha
+                                </label>
+                                <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-sign-in-alt me-2"></i>Entrar
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Register Tab -->
+                    <div class="tab-pane fade" id="register" role="tabpanel">
+                        <form method="POST">
+                            <input type="hidden" name="action" value="register">
+                            <div class="mb-3">
+                                <label for="new_username" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Usuário
+                                </label>
+                                <input type="text" class="form-control form-control-lg" id="new_username" name="new_username" required>
+                                <div class="form-text">Escolha um nome de usuário único</div>
+                            </div>
+                            <div class="mb-4">
+                                <label for="new_password" class="form-label">
+                                    <i class="fas fa-lock me-1"></i>Senha
+                                </label>
+                                <input type="password" class="form-control form-control-lg" id="new_password" name="new_password" required minlength="6">
+                                <div class="form-text">Mínimo de 6 caracteres</div>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-lg w-100">
+                                <i class="fas fa-user-plus me-2"></i>Criar Conta
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="{{ url_for('guest_analysis') }}" class="btn btn-outline-primary">
+                <i class="fas fa-upload me-2"></i>Análise sem cadastro
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.nav-pills .nav-link {
+    border-radius: 0;
+    background: transparent;
+    border: none;
+}
+
+.nav-pills .nav-link.active {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.card-header .nav-pills {
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}
